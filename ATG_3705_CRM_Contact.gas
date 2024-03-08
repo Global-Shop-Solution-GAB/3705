@@ -1,0 +1,110 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'enm
+'7/14/2010
+'Butterworth Systems
+'Hook 10920
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+F.Intrinsic.Control.CallSub(Contact)
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+Program.Sub.Main.End
+
+Program.Sub.Contact.Start
+V.Local.sCust.Declare(String)
+V.Local.sContact.Declare(String)
+V.Local.sEmail.Declare(String)
+V.Local.sPhone.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sDate.Declare(String)
+V.Local.sTime.Declare(String)
+V.Local.iID.Declare(Long)
+V.Local.sID.Declare(String)
+V.Local.sType.Declare(String)
+V.Local.iAltID.Declare(Long)
+V.Local.sSuffix.Declare(String)
+V.Local.i.Declare(Long)
+
+V.Local.sCust.Set(V.Passed.000006)
+V.Local.sContact.Set(V.Passed.000001)
+'F.Intrinsic.String.Split(V.Local.sContact," ",V.Local.sContact)
+'F.Intrinsic.String.Right(V.Local.sContact.UBound,1,V.Local.sSuffix)
+'F.Intrinsic.Control.SelectCase(V.Local.sSuffix)
+'
+'F.Intrinsic.Control.EndSelect
+V.Local.sEmail.Set(V.Passed.000071)
+V.Local.sPhone.Set(V.Passed.000051)
+
+F.Intrinsic.String.Concat("Select * from Contact where Cust='",V.Local.sCust,"' order by ID desc",V.Local.sSQL)
+F.ODBC.Connection!con.OpenRecordsetRO("rstLU",V.Local.sSQL)
+F.Intrinsic.Control.If(V.ODBC.con!rstLU.EOF,=,True)
+	V.Local.sID.Set("000000000")
+	F.Intrinsic.String.Concat("Select PROSPECT from Prospect_Master where Prospect='",V.Local.sCust,"'",V.Local.sSQL)
+	F.ODBC.Connection!con.OpenRecordsetRO("rstP",V.Local.sSQL)
+	F.Intrinsic.Control.If(V.ODBC.con!rstP.EOF,=,False)
+		V.Local.sType.Set("P")
+	F.Intrinsic.Control.Else
+		V.Local.sType.Set("C")
+	F.Intrinsic.Control.EndIf
+	F.ODBC.con!rstP.Close
+F.Intrinsic.Control.Else
+	F.Intrinsic.Math.Add(V.ODBC.con!rstLU.FieldVal!ID,1,V.Local.iID)
+	F.Intrinsic.String.Format(V.Local.iID,"000000000",V.Local.sID)
+	'F.ODBC.con!rst.Set!ID(V.Local.sID)
+	V.Local.sType.Set(V.ODBC.con!rstLU.FieldVal!Type)
+F.Intrinsic.Control.EndIf
+F.ODBC.Connection!con.OpenRecordsetRO("rstAlt","Select Top 1 ALT_ID from Contact order by Alt_ID desc")
+F.Intrinsic.Control.If(V.ODBC.con!rstAlt.EOF,=,True)
+	V.Local.iAltID.Set("0")
+F.Intrinsic.Control.Else
+	'F.Intrinsic.UI.Msgbox(V.ODBC.con!rstAlt.FieldVal!Alt_ID)
+	F.Intrinsic.Math.Add(V.ODBC.con!rstAlt.FieldValLong!Alt_Id,1,V.Local.iAltID)
+F.Intrinsic.Control.EndIf
+'F.Intrinsic.UI.Msgbox(V.Local.iAltID)
+F.ODBC.con!rstAlt.close
+F.Intrinsic.String.Concat("Select * from CONTACT where Cust='",V.Local.sCust,"' and Name='",V.Local.sContact,"'",V.Local.sSQL)
+F.ODBC.Connection!con.OpenRecordsetRW("rst",V.Local.sSQL)
+F.Intrinsic.control.if(V.ODBC.con!rst.EOF,=,True)
+	F.ODBC.con!rst.AddNew
+	F.ODBC.con!rst.Set!Type(V.Local.sType)
+	F.ODBC.con!rst.Set!Cust(V.Local.sCust)
+	F.ODBC.con!rst.Set!ID(V.Local.sID)
+	F.ODBC.con!rst.Set!Name(V.Local.sContact)
+	F.ODBC.con!rst.Set!Name_Preferred(V.Local.sContact)
+'	F.ODBC.con!rst.Set!Name_Last(V.Local.sContact(1))
+'	F.ODBC.con!rst.Set!Name_Suffix(V.Local.sContact(2))
+	F.ODBC.con!rst.Set!Email1(V.Local.sEmail)
+	F.ODBC.con!rst.Set!Seq("00")
+	F.ODBC.con!rst.Set!Phone_T1(3)
+	F.ODBC.con!rst.Set!Phone1(V.Local.sPhone)
+	F.ODBC.con!rst.Set!Phone_T2(2)
+	F.ODBC.con!rst.Set!Phone_T3(3)
+	F.ODBC.con!rst.Set!Phone_T4(2)
+	F.ODBC.con!rst.Set!Active(1)
+	F.ODBC.con!rst.Set!Alt_Id(V.Local.iAltID)
+	F.Intrinsic.String.Format(V.Ambient.Date,"mmddyyyy",V.Local.sDate)
+	F.ODBC.con!rst.Set!Last_Chg_Date(V.Local.sdate)
+	F.Intrinsic.String.Format(V.Ambient.Time,"mmnnss",V.Local.sTime)
+	F.ODBC.con!rst.Set!Last_Chg_Time(V.Local.sTime)
+	F.ODBC.con!rst.Set!Last_chg_PGM("CRM")
+	F.ODBC.con!rst.Set!Last_Chg_By(V.Caller.User)
+	F.ODBC.con!rst.Update
+F.Intrinsic.Control.EndIf
+F.ODBC.con!rst.Close
+
+Program.Sub.Contact.End
+
+Program.Sub.Comments.Start
+${$0$}$ATG_3705_CRM_Contact$}$JCT$}$4/6/2016
+${$1$}$$}$$}$0$}$10920$}$QTS0200A-SAVE-BTN-HOOK$}$4/6/2016 12:30:22 PM$}$(Program: QTE200; Screen: QTS0200A)
+
+Program.Sub.Comments.End
+
